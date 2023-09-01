@@ -29,6 +29,13 @@ locals {
     orders    = "iceberg/dummy_data/orders.csv",
     products  = "iceberg/dummy_data/products.csv"
   }
+
+  sql_files = [
+    "iceberg/initialize/create_database.sql",
+    "iceberg/initialize/create_customers_table.sql",
+    "iceberg/initialize/create_orders_table.sql",
+    "iceberg/initialize/create_products_table.sql",
+  ]
 }
 
 resource "aws_s3_bucket_object" "csv_objects" {
@@ -38,6 +45,15 @@ resource "aws_s3_bucket_object" "csv_objects" {
   key          = "raw_input/${each.key}/$(basename ${each.value})"
   source       = each.value
   content_type = "text/csv"
+}
+
+resource "aws_s3_bucket_object" "sql_objects" {
+  for_each = { for file in local.sql_files : file => file }
+
+  bucket       = aws_s3_bucket.lakehouse_scripts_bucket
+  key          = each.value
+  source       = each.value
+  content_type = "application/sql"
 }
 
 resource "aws_glue_catalog_database" "lakehouse_db" {
