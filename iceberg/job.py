@@ -84,17 +84,19 @@ def main():
         }
     ).toDF()
 
-    dummy_data_frame.createOrReplaceTempView("tmp_dummy_data")
+    # dummy_data_frame.createOrReplaceTempView("tmp_dummy_data")
 
     logger.info("Appending the dummy data to the Iceberg table")
     # Append the dummy data to the Iceberg table using Data Catalog
-    query = f"""
-    CREATE TABLE glue_catalog.{database_name}.{table_name} 
-    USING iceberg
-    AS SELECT * FROM tmp_dummy_data
-    """
+    # query = f"""
+    # CREATE TABLE glue_catalog.{database_name}.{table_name}
+    # USING iceberg
+    # AS SELECT * FROM tmp_dummy_data
+    # """
 
-    spark.sql(query)
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS glue_catalog.{database_name}")
+
+    dummy_data_frame.writeTo(f"glue_catalog.{database_name}.{table_name}").tableProperty('format-version', '2').append()
 
     job.commit()
 

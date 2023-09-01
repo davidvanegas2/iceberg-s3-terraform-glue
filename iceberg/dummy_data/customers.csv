@@ -1,0 +1,11 @@
+customer_id,first_name,last_name,email,city
+101,John,Doe,johndoe@example.com,Bogota
+102,Alice,Smith,alice@example.com,Medellin
+103,David,Johnson,david@example.com,Cali
+104,Emma,Williams,emma@example.com,Barranquilla
+105,James,Brown,james@example.com,Cartagena
+106,Sarah,Jones,sarah@example.com,Bucaramanga
+107,Michael,Clark,michael@example.com,Pereira
+108,Laura,White,laura@example.com,Cucuta
+109,William,Miller,william@example.com,Santa Marta
+110,Olivia,Wilson,olivia@example.com,Manizales
