@@ -15,7 +15,7 @@ resource "aws_s3_bucket" "lakehouse_scripts_bucket" {
 
 resource "aws_s3_bucket_object" "lakehouse_job_bucket_object" {
   bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key    = "scripts/job.py"
+  key    = "iceberg/job.py"
   source = "iceberg/job.py"
 
   depends_on = [
@@ -23,14 +23,21 @@ resource "aws_s3_bucket_object" "lakehouse_job_bucket_object" {
   ]
 }
 
-resource "aws_s3_bucket_object" "lakehouse_dummy_data_bucket_object" {
-  bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key    = var.dummy_data_s3_key
-  source = "iceberg/data/dummy_data.csv"
+locals {
+  csv_files = {
+    customers = "iceberg/dummy_data/customers.csv",
+    orders    = "iceberg/dummy_data/orders.csv",
+    products  = "iceberg/dummy_data/products.csv"
+  }
+}
 
-  depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket
-  ]
+resource "aws_s3_bucket_object" "csv_objects" {
+  for_each = { for category, file in local.csv_files : category => file }
+
+  bucket       = aws_s3_bucket.lakehouse_bucket
+  key          = "raw_input/${each.key}/$(basename ${each.value})"
+  source       = each.value
+  content_type = "text/csv"
 }
 
 resource "aws_glue_catalog_database" "lakehouse_db" {
