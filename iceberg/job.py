@@ -9,7 +9,7 @@ The mandatory steps are:
 3. Append the dummy data to the Iceberg table
 
 The mandatory job parameters are:
---warehouse_bucket: The location of the warehouse
+--conf: The Spark configuration
 --database_name: The name of the database to create
 --dummy_data_bucket: The bucket where the dummy data is stored
 --dummy_data_key_orders: The key of the dummy data in the S3 bucket

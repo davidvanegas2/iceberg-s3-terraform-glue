@@ -10,8 +10,20 @@ variable "lakehouse_table_name" {
   default     = "table_v1"
 }
 
-variable "dummy_data_s3_key" {
+variable "dummy_data_key_customers" {
   description = "The S3 key of the dummy data to load"
   type        = string
-  default     = "data/dummy_data.csv"
+  default     = "iceberg/dummy_data/customers.csv"
+}
+
+variable "dummy_data_key_orders" {
+  description = "The S3 key of the dummy data to load"
+  type        = string
+  default     = "iceberg/dummy_data/orders.csv"
+}
+
+variable "dummy_data_key_products" {
+  description = "The S3 key of the dummy data to load"
+  type        = string
+  default     = "iceberg/dummy_data/products.csv"
 }

@@ -25,9 +25,9 @@ resource "aws_s3_bucket_object" "lakehouse_job_bucket_object" {
 
 locals {
   csv_files = {
-    customers = "iceberg/dummy_data/customers.csv",
-    orders    = "iceberg/dummy_data/orders.csv",
-    products  = "iceberg/dummy_data/products.csv"
+    customers = var.dummy_data_key_customers,
+    orders    = var.dummy_data_key_orders,
+    products  = var.dummy_data_key_products,
   }
 
   sql_files = [
@@ -54,11 +54,6 @@ resource "aws_s3_bucket_object" "sql_objects" {
   key          = each.value
   source       = each.value
   content_type = "application/sql"
-}
-
-resource "aws_glue_catalog_database" "lakehouse_db" {
-  name        = var.lakehouse_database_name
-  description = "Lakehouse database"
 }
 
 resource "aws_iam_role" "glue_service_role" {
@@ -92,7 +87,7 @@ resource "aws_iam_policy" "glue_service_role_policy" {
         ]
         Effect = "Allow"
         Resource = [
-          "arn:aws:s3:::${aws_s3_bucket.lakehouse_scripts_bucket.id}/*"
+          "arn:aws:s3:::${aws_s3_bucket.lakehouse_bucket.id}/*",
         ]
       },
       {
@@ -115,11 +110,6 @@ resource "aws_iam_policy" "glue_service_role_policy" {
       }
     ]
   })
-
-  depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket,
-    aws_iam_role.glue_service_role
-  ]
 }
 
 resource "aws_iam_role_policy_attachment" "glue_role_policy_attachment" {
@@ -138,12 +128,13 @@ resource "aws_glue_job" "iceberg_init_job" {
   }
 
   default_arguments = {
-    "warehouse_bucket"  = aws_s3_bucket.lakehouse_bucket.id
-    "database_name"     = var.lakehouse_database_name
-    "table_name"        = var.lakehouse_table_name
-    "dummy_data_bucket" = aws_s3_bucket.lakehouse_scripts_bucket.id
-    "dummy_data_s3_key" = var.dummy_data_s3_key
-    "datalake-formats"  = "iceberg"
+    "conf"                     = "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  --conf spark.sql.catalog.glue_catalog=org.apache.iceberg.spark.SparkCatalog  --conf spark.sql.catalog.glue_catalog.warehouse=s3://${aws_s3_bucket.lakehouse_bucket}/  --conf spark.sql.catalog.glue_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog  --conf spark.sql.catalog.glue_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO"
+    "database_name"            = var.lakehouse_database_name
+    "dummy_data_bucket"        = aws_s3_bucket.lakehouse_scripts_bucket.id
+    "dummy_data_key_orders"    = var.dummy_data_key_orders
+    "dummy_data_key_customers" = var.dummy_data_key_customers
+    "dummy_data_key_products"  = var.dummy_data_key_products
+    "datalake-formats"         = "iceberg"
   }
 
   depends_on = [
