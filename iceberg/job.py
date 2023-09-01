@@ -25,6 +25,7 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from pyspark.conf import SparkConf
 from awsglue.job import Job
+from pyspark.sql.functions import col
 
 sc = SparkContext.getOrCreate()
 glue_context = GlueContext(sc)
@@ -37,25 +38,22 @@ logger.info("Starting Glue job: job.py")
 logger.info("Reading the arguments passed to the job")
 # Read the arguments passed to the job
 args = getResolvedOptions(sys.argv, [
-    "warehouse_bucket",
     "database_name",
-    "table_name",
     "dummy_data_bucket",
     "dummy_data_key_orders",
     "dummy_data_key_customers",
     "dummy_data_key_products",
-    ])
+])
 
 # Get the arguments
-warehouse_bucket = args["warehouse_bucket"].strip()
 database_name = args["database_name"].strip()
 dummy_data_bucket = args["dummy_data_bucket"].strip()
 dummy_data_key_orders = args["dummy_data_key_orders"].strip()
 dummy_data_key_customers = args["dummy_data_key_customers"].strip()
 dummy_data_key_products = args["dummy_data_key_products"].strip()
 
+
 logger.info(f"Glue Job parameters:\n"
-            f"warehouse_location: {warehouse_bucket}\n"
             f"database_name: {database_name}\n"
             f"dummy_data_bucket: {dummy_data_bucket}\n"
             f"dummy_data_key_orders: {dummy_data_key_orders}\n"
@@ -82,6 +80,12 @@ def main():
         }
     ).toDF()
 
+    data_orders = (data_orders
+                   .withColumn("order_id", col("order_id").cast("int"))
+                   .withColumn("customer_id", col("customer_id").cast("int"))
+                   .withColumn("total_amount", col("total_amount").cast("double"))
+                   .withColumn("order_date", col("order_date").cast("date")))
+
     data_customers = glue_context.create_dynamic_frame.from_options(
         connection_type="s3",
         connection_options={
@@ -95,6 +99,9 @@ def main():
         }
     ).toDF()
 
+    data_customers = (data_customers
+                      .withColumn("customer_id", col("customer_id").cast("int")))
+
     data_products = glue_context.create_dynamic_frame.from_options(
         connection_type="s3",
         connection_options={
@@ -107,6 +114,10 @@ def main():
             "separator": ","
         }
     ).toDF()
+
+    data_products = (data_products
+                     .withColumn("product_id", col("product_id").cast("int"))
+                     .withColumn("price", col("price").cast("double")))
 
     # Create temporary views for the dummy data
     data_orders.createOrReplaceTempView("tmp_dummy_data_orders")
