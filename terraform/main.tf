@@ -116,7 +116,7 @@ resource "aws_glue_job" "iceberg_init_job" {
 
   default_arguments = {
     "warehouse_bucket"  = aws_s3_bucket.lakehouse_bucket.id
-    "database_name"     = lakehouse_database_name
+    "database_name"     = var.lakehouse_database_name
     "table_name"        = var.lakehouse_table_name
     "dummy_data_bucket" = aws_s3_bucket.lakehouse_scripts_bucket.id
     "dummy_data_s3_key" = var.dummy_data_s3_key
