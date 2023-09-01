@@ -125,6 +125,7 @@ resource "aws_glue_job" "iceberg_init_job" {
 
   depends_on = [
     aws_s3_bucket_object.lakehouse_scripts_bucket_object,
-    aws_iam_role_policy_attachment.glue_role_policy_attachment
+    aws_iam_role_policy_attachment.glue_role_policy_attachment,
+    aws_glue_catalog_database.lakehouse_db
   ]
 }

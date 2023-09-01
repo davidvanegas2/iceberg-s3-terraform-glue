@@ -28,6 +28,7 @@ from awsglue.job import Job
 sc = SparkContext.getOrCreate()
 glue_context = GlueContext(sc)
 job = Job(glue_context)
+spark = glue_context.spark_session
 logger = glue_context.get_logger()
 conf = SparkConf()
 
@@ -70,7 +71,7 @@ def main():
     """
     logger.info("Reading the dummy data from the S3 bucket")
     # Read the dummy data from the S3 bucket
-    dummy_data = glue_context.create_dynamic_frame.from_options(
+    dummy_data_frame = glue_context.create_dynamic_frame.from_options(
         connection_type="s3",
         connection_options={
             "paths": [f"s3://{dummy_data_bucket}/{dummy_data_s3_key}"],
@@ -83,9 +84,17 @@ def main():
         }
     ).toDF()
 
+    dummy_data_frame.createOrReplaceTempView("tmp_dummy_data")
+
     logger.info("Appending the dummy data to the Iceberg table")
     # Append the dummy data to the Iceberg table using Data Catalog
-    dummy_data.writeTo(f"glue_catalog.{database_name}.{table_name}").append()
+    query = f"""
+    CREATE TABLE glue_catalog.{database_name}.{table_name} 
+    USING iceberg
+    AS SELECT * FROM tmp_dummy_data
+    """
+
+    spark.sql(query)
 
     job.commit()
 
