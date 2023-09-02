@@ -27,3 +27,9 @@ variable "dummy_data_key_products" {
   type        = string
   default     = "iceberg/dummy_data/products.csv"
 }
+
+variable "project_root" {
+  description = "The root of the project"
+  type        = string
+  default     = "../"
+}
