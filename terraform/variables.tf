@@ -33,3 +33,9 @@ variable "project_root" {
   type        = string
   default     = "../"
 }
+
+variable "path_command_create_zip_lambda" {
+  description = "The path to the command to create the zip file for the lambda"
+  type        = string
+  default     = "../iceberg/initialize/lambda_run_SQL_files/create_lambda_zip.sh"
+}

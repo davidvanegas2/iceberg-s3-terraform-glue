@@ -178,3 +178,91 @@ resource "aws_glue_job" "iceberg_init_job" {
     aws_s3_object.sql_objects
   ]
 }
+
+resource "aws_glue_catalog_database" "iceberg_lakehouse_database" {
+  name = "iceberg_lakehouse" # Replace with your desired database name
+}
+
+# Define the null_resource to run the script
+resource "null_resource" "create_lambda_zip" {
+  triggers = {
+    # Trigger whenever the contents of the Lambda function folder change
+    files = "${path.module}/../iceberg/initialize/lambda_run_SQL_files/src"
+  }
+
+  # Use the local-exec provisioner to run the script
+  provisioner "local-exec" {
+    command = var.path_command_create_zip_lambda
+  }
+}
+
+# Create an IAM role for Lambda
+resource "aws_iam_role" "lambda_role" {
+  name = "lambda-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Create an IAM policy for Lambda to read from S3
+resource "aws_iam_policy" "lambda_policy" {
+  name        = "lambda-s3-read-policy"
+  description = "Policy for Lambda to read from S3"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      Effect = "Allow",
+      Resource = [
+        aws_s3_bucket.lakehouse_scripts_bucket.arn,
+        "${aws_s3_bucket.lakehouse_scripts_bucket.arn}/*"
+      ]
+    }]
+  })
+}
+
+# Attach the policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_attachment" {
+  policy_arn = aws_iam_policy.lambda_policy.arn
+  role       = aws_iam_role.lambda_role.name
+}
+
+# Define the Lambda function resource
+resource "aws_lambda_function" "create_iceberg_tables" {
+  function_name = "create_iceberg_tables_lambda"
+  handler       = "lambda_function.handler" # Replace with your Lambda function handler
+  role          = aws_iam_role.lambda_role.arn
+
+  runtime     = "python3.8"
+  memory_size = 256
+  timeout     = 10
+
+  # Reference the ZIP archive created by the script
+  filename = "lambda_function.zip" # Specify the path to your ZIP archive
+
+  # Define environment variables
+  environment {
+    variables = {
+      SCRIPT_BUCKET          = aws_s3_bucket.lakehouse_scripts_bucket.id,
+      SCRIPT_KEY             = "iceberg/initialize/SQL_files/",
+      ATHENA_OUTPUT_LOCATION = "s3://${aws_s3_bucket.lakehouse_bucket.id}/athena_output/",
+      ATHENA_DATABASE        = aws_glue_catalog_database.iceberg_lakehouse_database.name
+      # Add more environment variables as needed
+    }
+  }
+
+  # Create a dependency link between aws_lambda_function and null_resource
+  depends_on = [null_resource.create_lambda_zip]
+}
