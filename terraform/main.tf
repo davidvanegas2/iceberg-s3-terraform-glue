@@ -15,12 +15,8 @@ resource "aws_s3_bucket" "lakehouse_scripts_bucket" {
 
 resource "aws_s3_bucket_object" "lakehouse_job_bucket_object" {
   bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key    = "iceberg/job.py"
-  source = "iceberg/job.py"
-
-  depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket
-  ]
+  key    = "iceberg/ingest_data/job.py"
+  source = "iceberg/ingest_data/job.py"
 }
 
 locals {
@@ -31,10 +27,10 @@ locals {
   }
 
   sql_files = [
-    "iceberg/initialize/create_database.sql",
-    "iceberg/initialize/create_customers_table.sql",
-    "iceberg/initialize/create_orders_table.sql",
-    "iceberg/initialize/create_products_table.sql",
+    "iceberg/initialize/SQL_files/create_database.sql",
+    "iceberg/initialize/SQL_files/create_customers_table.sql",
+    "iceberg/initialize/SQL_files/create_orders_table.sql",
+    "iceberg/initialize/SQL_files/create_products_table.sql",
   ]
 }
 
@@ -119,7 +115,7 @@ resource "aws_iam_role_policy_attachment" "glue_role_policy_attachment" {
 
 resource "aws_glue_job" "iceberg_init_job" {
   name     = "iceberg_init_job"
-  role_arn = aws_iam_role.glue_role.arn
+  role_arn = aws_iam_role.glue_service_role.arn
 
   command {
     name            = "glue_etl"
@@ -136,10 +132,4 @@ resource "aws_glue_job" "iceberg_init_job" {
     "dummy_data_key_products"  = var.dummy_data_key_products
     "datalake-formats"         = "iceberg"
   }
-
-  depends_on = [
-    aws_s3_bucket_object.lakehouse_scripts_bucket_object,
-    aws_iam_role_policy_attachment.glue_role_policy_attachment,
-    aws_glue_catalog_database.lakehouse_db
-  ]
 }
