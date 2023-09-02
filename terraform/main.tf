@@ -3,39 +3,89 @@ provider "aws" {
   profile = "dvanegas"
 }
 
+resource "random_id" "lakehouse_bucket_id" {
+  byte_length = 8
+}
+
 resource "aws_s3_bucket" "lakehouse_bucket" {
-  bucket = "lakehouse-bucket-dvanegas-${random_id.random_id.hex}"
+  bucket = "lakehouse-bucket-dvanegas-${random_id.lakehouse_bucket_id.hex}"
+}
+
+resource "aws_s3_bucket_ownership_controls" "lakehouse_bucket" {
+  bucket = aws_s3_bucket.lakehouse_bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "lakehouse_bucket" {
+  bucket = aws_s3_bucket.lakehouse_bucket.id
   acl    = "private"
+
+  depends_on = [
+    aws_s3_bucket_ownership_controls.lakehouse_bucket
+  ]
 }
 
 resource "aws_s3_bucket" "lakehouse_scripts_bucket" {
-  bucket = "lakehouse-scripts-bucket-dvanegas-${random_id.random_id.hex}"
+  bucket = "lakehouse-scripts-bucket-dvanegas-${random_id.lakehouse_bucket_id.hex}"
+}
+
+resource "aws_s3_bucket_ownership_controls" "lakehouse_scripts_bucket" {
+  bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "lakehouse_scripts_bucket" {
+  bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
   acl    = "private"
-}
-
-resource "aws_s3_bucket_object" "lakehouse_job_bucket_object" {
-  bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key    = "scripts/job.py"
-  source = "iceberg/job.py"
 
   depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket
+    aws_s3_bucket_ownership_controls.lakehouse_scripts_bucket
   ]
 }
 
-resource "aws_s3_bucket_object" "lakehouse_dummy_data_bucket_object" {
+resource "aws_s3_object" "lakehouse_job_bucket_object" {
   bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key    = var.dummy_data_s3_key
-  source = "iceberg/data/dummy_data.csv"
+  key    = "iceberg/ingest_data/job.py"
+  source = "${var.project_root}/iceberg/ingest_data/job.py"
+}
 
-  depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket
+locals {
+  csv_files = {
+    customers = var.dummy_data_key_customers,
+    orders    = var.dummy_data_key_orders,
+    products  = var.dummy_data_key_products,
+  }
+
+  sql_files = [
+    "iceberg/initialize/SQL_files/create_database.sql",
+    "iceberg/initialize/SQL_files/create_customers_table.sql",
+    "iceberg/initialize/SQL_files/create_orders_table.sql",
+    "iceberg/initialize/SQL_files/create_products_table.sql",
   ]
 }
 
-resource "aws_glue_catalog_database" "lakehouse_db" {
-  name        = var.lakehouse_database_name
-  description = "Lakehouse database"
+resource "aws_s3_object" "csv_objects" {
+  for_each = { for category, file in local.csv_files : category => file }
+
+  bucket       = aws_s3_bucket.lakehouse_bucket.id
+  key          = "raw_input/${each.key}/${basename(each.value)}" # basename() is a Terraform function that returns the filename without the path
+  source       = "${var.project_root}${each.value}"
+  content_type = "text/csv"
+}
+
+resource "aws_s3_object" "sql_objects" {
+  for_each = { for file in local.sql_files : file => file }
+
+  bucket       = aws_s3_bucket.lakehouse_scripts_bucket.id
+  key          = each.value
+  source       = "${var.project_root}${each.value}"
+  content_type = "application/sql"
 }
 
 resource "aws_iam_role" "glue_service_role" {
@@ -69,7 +119,7 @@ resource "aws_iam_policy" "glue_service_role_policy" {
         ]
         Effect = "Allow"
         Resource = [
-          "arn:aws:s3:::${aws_s3_bucket.lakehouse_scripts_bucket.id}/*"
+          "arn:aws:s3:::${aws_s3_bucket.lakehouse_bucket.id}/*",
         ]
       },
       {
@@ -92,40 +142,39 @@ resource "aws_iam_policy" "glue_service_role_policy" {
       }
     ]
   })
-
-  depends_on = [
-    aws_s3_bucket.lakehouse_scripts_bucket,
-    aws_iam_role.glue_service_role
-  ]
 }
 
 resource "aws_iam_role_policy_attachment" "glue_role_policy_attachment" {
-  role       = aws_iam_role.glue_role.name
-  policy_arn = aws_iam_policy.glue_policy.arn
+  role       = aws_iam_role.glue_service_role.id
+  policy_arn = aws_iam_policy.glue_service_role_policy.arn
 }
 
 resource "aws_glue_job" "iceberg_init_job" {
-  name     = "iceberg_init_job"
-  role_arn = aws_iam_role.glue_role.arn
+  name         = "iceberg_init_job"
+  role_arn     = aws_iam_role.glue_service_role.arn
+  glue_version = "4.0"
 
   command {
-    name            = "glue_etl"
+    name            = "glueetl"
     python_version  = "3"
-    script_location = "s3://${aws_s3_bucket.lakehouse_scripts_bucket.id}/scripts/job.py"
+    script_location = "s3://${aws_s3_bucket.lakehouse_scripts_bucket.id}/${aws_s3_object.lakehouse_job_bucket_object.key}"
   }
 
   default_arguments = {
-    "warehouse_bucket"  = aws_s3_bucket.lakehouse_bucket.id
-    "database_name"     = var.lakehouse_database_name
-    "table_name"        = var.lakehouse_table_name
-    "dummy_data_bucket" = aws_s3_bucket.lakehouse_scripts_bucket.id
-    "dummy_data_s3_key" = var.dummy_data_s3_key
-    "datalake-formats"  = "iceberg"
+    "--conf"                     = "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  --conf spark.sql.catalog.glue_catalog=org.apache.iceberg.spark.SparkCatalog  --conf spark.sql.catalog.glue_catalog.warehouse=s3://${aws_s3_bucket.lakehouse_bucket.id}/  --conf spark.sql.catalog.glue_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog  --conf spark.sql.catalog.glue_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO"
+    "--database_name"            = var.lakehouse_database_name
+    "--dummy_data_bucket"        = aws_s3_bucket.lakehouse_scripts_bucket.id
+    "--dummy_data_key_orders"    = var.dummy_data_key_orders
+    "--dummy_data_key_customers" = var.dummy_data_key_customers
+    "--dummy_data_key_products"  = var.dummy_data_key_products
+    "--datalake-formats"         = "iceberg"
   }
 
   depends_on = [
-    aws_s3_bucket_object.lakehouse_scripts_bucket_object,
-    aws_iam_role_policy_attachment.glue_role_policy_attachment,
-    aws_glue_catalog_database.lakehouse_db
+    aws_s3_bucket.lakehouse_bucket,
+    aws_s3_bucket.lakehouse_scripts_bucket,
+    aws_s3_object.lakehouse_job_bucket_object,
+    aws_s3_object.csv_objects,
+    aws_s3_object.sql_objects
   ]
 }
