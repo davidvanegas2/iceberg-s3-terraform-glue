@@ -3,7 +3,7 @@ output "lakehouse_bucket_name" {
 }
 
 output "lakehouse_script_bucket_name" {
-  value = aws_s3_bucket.lakehouse_script_bucket.id
+  value = aws_s3_bucket.lakehouse_scripts_bucket.id
 }
 
 output "glue_service_role_arn" {
