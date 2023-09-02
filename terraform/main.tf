@@ -150,9 +150,11 @@ resource "aws_iam_role_policy_attachment" "glue_role_policy_attachment" {
 }
 
 resource "aws_glue_job" "iceberg_init_job" {
-  name         = "iceberg_init_job"
-  role_arn     = aws_iam_role.glue_service_role.arn
-  glue_version = "4.0"
+  name              = "iceberg_init_job"
+  role_arn          = aws_iam_role.glue_service_role.arn
+  glue_version      = "4.0"
+  number_of_workers = 2
+  worker_type       = "G.1X"
 
   command {
     name            = "glueetl"
@@ -219,16 +221,27 @@ resource "aws_iam_policy" "lambda_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [{
-      Action = [
-        "s3:GetObject",
-        "s3:ListBucket"
-      ],
-      Effect = "Allow",
-      Resource = [
-        aws_s3_bucket.lakehouse_scripts_bucket.arn,
-        "${aws_s3_bucket.lakehouse_scripts_bucket.arn}/*"
-      ]
+    Statement = [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:*"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "athena:*"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "glue:*"
+        ],
+        "Resource" : "*"
     }]
   })
 }
@@ -242,7 +255,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attachment" {
 # Define the Lambda function resource
 resource "aws_lambda_function" "create_iceberg_tables" {
   function_name = "create_iceberg_tables_lambda"
-  handler       = "lambda_function.handler" # Replace with your Lambda function handler
+  handler       = "lambda_function.lambda_handler" # Replace with your Lambda function handler
   role          = aws_iam_role.lambda_role.arn
 
   runtime     = "python3.8"
