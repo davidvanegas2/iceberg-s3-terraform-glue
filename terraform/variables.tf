@@ -1,7 +1,7 @@
 variable "lakehouse_database_name" {
   description = "The name of the database to create"
   type        = string
-  default     = "lakehouse"
+  default     = "iceberg_lakehouse"
 }
 
 variable "lakehouse_table_name" {
