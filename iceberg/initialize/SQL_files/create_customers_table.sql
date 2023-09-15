@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS iceberg_lakehouse.customers (
     email STRING,
     city STRING)
 PARTITIONED BY (city)
-LOCATION 's3://david-lakehouse-202331/iceberg-output/customers/'
+LOCATION 's3://%LAKEHOUSE_BUCKET%/iceberg-output/customers/'
 TBLPROPERTIES (
     'table_type'='ICEBERG',
     'format'='parquet',

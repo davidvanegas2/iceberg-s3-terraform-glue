@@ -26,6 +26,16 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def add_lakehouse_bucket(sql_file: str, lakehouse_bucket: str) -> str:
+    """
+    Add the lakehouse bucket to the SQL file
+    :param sql_file: The SQL file as a string
+    :param lakehouse_bucket: The lakehouse bucket
+    :return: The SQL file as a string with the lakehouse bucket added
+    """
+    return sql_file.replace("%LAKEHOUSE_BUCKET%", lakehouse_bucket)
+
+
 def lambda_handler(event, context):
     """
     Lambda function to run SQL files stored in an S3 bucket on Athena to create Iceberg tables
@@ -39,12 +49,14 @@ def lambda_handler(event, context):
     athena_key = os.environ["SCRIPT_KEY"].strip()
     athena_output_location = os.environ["ATHENA_OUTPUT_LOCATION"].strip()
     athena_database = os.environ["ATHENA_DATABASE"].strip()
+    lakehouse_bucket = os.environ["LAKEHOUSE_BUCKET"].strip()
 
     logger.info(f"Environment variables:\n"
                 f"athena_bucket: {athena_bucket}\n"
                 f"athena_key: {athena_key}\n"
                 f"athena_output_location: {athena_output_location}\n"
-                f"athena_database: {athena_database}")
+                f"athena_database: {athena_database}\n"
+                f"lakehouse_bucket: {lakehouse_bucket}")
 
     logger.info("Reading the SQL files from the S3 bucket")
     # Read the SQL files from the S3 bucket
@@ -55,4 +67,5 @@ def lambda_handler(event, context):
     for file in files:
         logger.info(f"file: {file}")
         sql_file = read_sql_file(bucket=athena_bucket, key=file["Key"])
+        sql_file = add_lakehouse_bucket(sql_file=sql_file, lakehouse_bucket=lakehouse_bucket)
         run_sql_file(sql_file=sql_file, database_name=athena_database, output_location=athena_output_location)

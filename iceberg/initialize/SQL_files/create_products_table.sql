@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS iceberg_lakehouse.products (
     category STRING,
     price DOUBLE)
 PARTITIONED BY (category)
-LOCATION 's3://david-lakehouse-202331/iceberg-output/products/'
+LOCATION 's3://%LAKEHOUSE_BUCKET%/iceberg-output/products/'
 TBLPROPERTIES (
     'table_type'='ICEBERG',
     'format'='parquet',
