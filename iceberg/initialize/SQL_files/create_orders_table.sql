@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS iceberg_lakehouse.orders (
     customer_id INT,
     total_amount DOUBLE)
 PARTITIONED BY (order_date)
-LOCATION 's3://david-lakehouse-202331/iceberg-output/orders/'
+LOCATION 's3://%LAKEHOUSE_BUCKET%/iceberg-output/orders/'
 TBLPROPERTIES (
     'table_type'='ICEBERG',
     'format'='parquet',

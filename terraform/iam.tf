@@ -32,21 +32,24 @@ resource "aws_iam_policy" "glue_service_role_policy" {
       },
       {
         Action = [
-          "glue:GetDatabase",
-          "glue:GetTable",
-          "glue:GetPartitions",
-          "glue:GetConnection",
-          "glue:GetTableVersions",
-          "glue:GetTableVersion",
-          "glue:GetCrawler",
-          "glue:SearchTables",
-          "glue:GetCatalogImportStatus",
-          "glue:GetCrawlers",
-          "glue:GetCrawlerMetrics",
-          "glue:GetCrawlerVersions"
+          "glue:*"
         ],
         Effect   = "Allow",
-        Resource = "*"
+        Resource = ["*"]
+      },
+      {
+        Action = [
+          "cloudwatch:*"
+        ]
+        Effect   = "Allow",
+        Resource = ["*"]
+      },
+      {
+        Action = [
+          "logs:*"
+        ],
+        Effect   = "Allow",
+        Resource = ["*"]
       }
     ]
   })

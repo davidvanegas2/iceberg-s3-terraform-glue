@@ -17,7 +17,8 @@ resource "aws_lambda_function" "create_iceberg_tables" {
       SCRIPT_BUCKET          = aws_s3_bucket.lakehouse_scripts_bucket.id,
       SCRIPT_KEY             = "iceberg/initialize/SQL_files/",
       ATHENA_OUTPUT_LOCATION = "s3://${aws_s3_bucket.lakehouse_bucket.id}/athena_output/",
-      ATHENA_DATABASE        = aws_glue_catalog_database.iceberg_lakehouse_database.name
+      ATHENA_DATABASE        = aws_glue_catalog_database.iceberg_lakehouse_database.name,
+      LAKEHOUSE_BUCKET       = aws_s3_bucket.lakehouse_bucket.id,
       # Add more environment variables as needed
     }
   }

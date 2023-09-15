@@ -57,7 +57,7 @@ locals {
     products  = var.dummy_data_key_products,
   }
 
-  sql_files = fileset("iceberg/initialize/SQL_files/", "*.sql")
+  sql_files = fileset("../iceberg/initialize/SQL_files/", "*.sql")
 }
 
 resource "aws_s3_object" "csv_objects" {
@@ -73,7 +73,11 @@ resource "aws_s3_object" "sql_objects" {
   for_each = { for file in local.sql_files : file => file }
 
   bucket       = aws_s3_bucket.lakehouse_scripts_bucket.id
-  key          = each.value
-  source       = "${var.project_root}${each.value}"
+  key          = "iceberg/initialize/SQL_files/${each.value}"
+  source       = "../iceberg/initialize/SQL_files/${each.value}"
   content_type = "application/sql"
+}
+
+resource "aws_s3_bucket" "results_athena_bucket" {
+  bucket = "athena-results-dvanegas-${random_id.lakehouse_bucket_id.hex}"
 }
