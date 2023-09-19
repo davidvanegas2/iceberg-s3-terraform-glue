@@ -4,10 +4,10 @@ variable "lakehouse_database_name" {
   default     = "iceberg_lakehouse"
 }
 
-variable "lakehouse_table_name" {
-  description = "The name of the table to create"
+variable "environment_name" {
+  description = "The name of the current environment"
   type        = string
-  default     = "table_v1"
+  default     = "sandbox"
 }
 
 variable "dummy_data_key_customers" {

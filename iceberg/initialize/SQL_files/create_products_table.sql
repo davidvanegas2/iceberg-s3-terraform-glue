@@ -8,5 +8,4 @@ PARTITIONED BY (category)
 LOCATION 's3://%LAKEHOUSE_BUCKET%/iceberg-output/products/'
 TBLPROPERTIES (
     'table_type'='ICEBERG',
-    'format'='parquet',
-    'write_target_data_file_size_bytes'='536870912');
+    'format'='parquet');
