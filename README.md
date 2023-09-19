@@ -1,7 +1,8 @@
 # iceberg-s3-terraform-glue
  Automated setup of Apache Iceberg on Amazon S3 using Terraform and AWS Glue Data Catalog. Explore the power of a Lakehouse architecture for data management and analysis, featuring schema discovery, metadata management, and efficient querying with Amazon Athena.
 
-![terraform_architecture drawio (4)](https://github.com/davidvanegas2/iceberg-s3-terraform-glue/assets/46963726/b7674336-3552-4bab-8120-558836c63a99)
+![terraform_architecture drawio (5)](https://github.com/davidvanegas2/iceberg-s3-terraform-glue/assets/46963726/c6c20925-7e9d-4567-a8dd-b7380e20b34a)
+
 
 # Deploying the Data Engineering Project
 To deploy this data engineering project, follow these steps:
