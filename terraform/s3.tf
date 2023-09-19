@@ -50,16 +50,6 @@ resource "aws_s3_object" "lakehouse_job_bucket_object" {
   source = "${var.project_root}/iceberg/ingest_data/job.py"
 }
 
-locals {
-  csv_files = {
-    customers = var.dummy_data_key_customers,
-    orders    = var.dummy_data_key_orders,
-    products  = var.dummy_data_key_products,
-  }
-
-  sql_files = fileset("../iceberg/initialize/SQL_files/", "*.sql")
-}
-
 resource "aws_s3_object" "csv_objects" {
   for_each = { for category, file in local.csv_files : category => file }
 
