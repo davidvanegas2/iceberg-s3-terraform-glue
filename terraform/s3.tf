@@ -3,7 +3,7 @@ resource "random_id" "lakehouse_bucket_id" {
 }
 
 resource "aws_s3_bucket" "lakehouse_bucket" {
-  bucket = "lakehouse-bucket-dvanegas-${random_id.lakehouse_bucket_id.hex}"
+  bucket = "lakehouse-bucket-${var.environment_name}-${data.aws_caller_identity.current.account_id}-${random_id.lakehouse_bucket_id.hex}"
 }
 
 resource "aws_s3_bucket_ownership_controls" "lakehouse_bucket" {
@@ -24,7 +24,7 @@ resource "aws_s3_bucket_acl" "lakehouse_bucket" {
 }
 
 resource "aws_s3_bucket" "lakehouse_scripts_bucket" {
-  bucket = "lakehouse-scripts-bucket-dvanegas-${random_id.lakehouse_bucket_id.hex}"
+  bucket = "lakehouse-scripts-bucket-${data.aws_caller_identity.current.account_id}-${random_id.lakehouse_bucket_id.hex}"
 }
 
 resource "aws_s3_bucket_ownership_controls" "lakehouse_scripts_bucket" {
@@ -79,5 +79,5 @@ resource "aws_s3_object" "sql_objects" {
 }
 
 resource "aws_s3_bucket" "results_athena_bucket" {
-  bucket = "athena-results-dvanegas-${random_id.lakehouse_bucket_id.hex}"
+  bucket = "athena-results-${data.aws_caller_identity.current.account_id}-${random_id.lakehouse_bucket_id.hex}"
 }
