@@ -68,6 +68,15 @@ resource "aws_s3_object" "sql_objects" {
   content_type = "application/sql"
 }
 
+resource "aws_s3_object" "lambda_run_SQL" {
+  bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
+
+  key = "lambda/lambda_function_run_SQL_files.zip"
+  source = data.archive_file.lambda_run_SQL_files.output_path
+
+  etag = filemd5(data.archive_file.lambda_run_SQL_files.output_path)
+}
+
 resource "aws_s3_bucket" "results_athena_bucket" {
   bucket = "athena-results-${data.aws_caller_identity.current.account_id}-${random_id.lakehouse_bucket_id.hex}"
 }

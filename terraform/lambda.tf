@@ -8,8 +8,8 @@ resource "aws_lambda_function" "create_iceberg_tables" {
   memory_size = 256
   timeout     = 10
 
-  # Reference the ZIP archive created by the script
-  filename = "lambda_function.zip" # Specify the path to your ZIP archive
+  s3_bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
+  s3_key = aws_s3_object.lambda_run_SQL.key
 
   # Define environment variables
   environment {
@@ -22,7 +22,4 @@ resource "aws_lambda_function" "create_iceberg_tables" {
       # Add more environment variables as needed
     }
   }
-
-  # Create a dependency link between aws_lambda_function and null_resource
-  depends_on = [null_resource.create_lambda_zip]
 }

@@ -156,6 +156,7 @@ cython_debug/
 *.tfstate
 *.tfstate.backup
 *.tfplan
+*.terraform.lock.hcl
 
 # Ignore local tfvars files (sensitive information)
 *.tfvars
