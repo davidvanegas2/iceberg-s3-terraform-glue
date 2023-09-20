@@ -49,8 +49,9 @@ To deploy this data engineering project, follow these steps:
  7. **Check Lambda Function:** After deploying your resources using Terraform, it's essential to confirm that the Lambda function has been executed correctly. First, open the AWS Management Console, then navigate to the Athena service and select the `lakehouse` workgroup. Look for the following tables:
     1.  `customers`
     2.  `orders`
-    3.  `products`\
-       These tables should be visible in the "lakehouse" workgroup. If they are present, it indicates that the Lambda function responsible for table creation has been executed successfully.
+    3.  `products`
+
+	These tables should be visible in the "lakehouse" workgroup. If they are present, it indicates that the Lambda function responsible for table creation has been executed successfully.
  ![image](https://github.com/davidvanegas2/iceberg-s3-terraform-glue/assets/46963726/cd85080e-0016-4966-af50-c2c7ed2785de)
  If the tables are not visible:
 	  - **Check CloudWatch Logs:** Navigate to the CloudWatch service and inspect the logs for any error messages or issues that might have occurred during the Lambda execution.
