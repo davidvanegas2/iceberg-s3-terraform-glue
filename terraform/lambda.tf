@@ -9,7 +9,7 @@ resource "aws_lambda_function" "create_iceberg_tables" {
   timeout     = 10
 
   s3_bucket = aws_s3_bucket.lakehouse_scripts_bucket.id
-  s3_key = aws_s3_object.lambda_run_SQL.key
+  s3_key    = aws_s3_object.lambda_run_SQL.key
 
   # Define environment variables
   environment {
@@ -22,4 +22,16 @@ resource "aws_lambda_function" "create_iceberg_tables" {
       # Add more environment variables as needed
     }
   }
+}
+
+resource "aws_lambda_invocation" "create_iceberg_tables" {
+  function_name = aws_lambda_function.create_iceberg_tables.function_name
+  input         = ""
+
+  depends_on = [
+    aws_s3_bucket.lakehouse_bucket,
+    aws_s3_bucket.lakehouse_scripts_bucket,
+    aws_athena_workgroup.lakehouse_workgroup,
+    aws_glue_catalog_database.iceberg_lakehouse_database
+  ]
 }
