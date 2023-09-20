@@ -21,7 +21,7 @@ terraform apply
 ```
  Review the changes and confirm by typing `yes` when prompted. Terraform will start provisioning the defined AWS resources.
 
-4. **Run Lambda Function:** Once the Terraform deployment is successful, The Lambda function is already executed by Terraform at creation time. This function is responsible for creating the Lakehouse tables.
+4. **Check Lambda Function:** Once the Terraform deployment is successful, the Lambda function is already invoked by Terraform at creation time. This function is responsible for creating the Lakehouse tables.
 
 5. **Trigger Glue Job:** After the Lambda function completes successfully, trigger the AWS Glue job created as part of this project. The Glue job will ingest data into the Lakehouse and perform necessary transformations.
 
