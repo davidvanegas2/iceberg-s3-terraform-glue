@@ -38,7 +38,8 @@ def run_sql_file(sql_file: str, database_name: str, output_location: str) -> Non
             },
             ResultConfiguration={
                 "OutputLocation": output_location
-            }
+            },
+            WorkGroup="lakehouse"
         )
         logger.info(f"response: {response}")
     except ClientError as e:

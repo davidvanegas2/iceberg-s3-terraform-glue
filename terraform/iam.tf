@@ -50,6 +50,11 @@ resource "aws_iam_policy" "glue_service_role_policy" {
         ],
         Effect   = "Allow",
         Resource = ["*"]
+      },
+      {
+        Action   = ["*"],
+        Effect   = "Allow",
+        Resource = ["*"]
       }
     ]
   })
